@@ -1,9 +1,30 @@
 .div-video-file-dialog {
     display: flex;
     justify-content: center;
+    align-items: center;
     gap: 0.4rem;
 }
 
-.p-video-file-dialog {
-    margin-top: 1rem;
+.div-video {
+    margin: 2rem 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.div-room-commands {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+}
+
+.div-first-step {
+
+}
+
+.div-second-step {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
 }

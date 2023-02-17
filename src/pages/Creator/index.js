@@ -54,13 +54,25 @@ export default function Creator() {
     <div className="creator-page">
       <p>Hello cruel world</p>
       <div className="div-video-file-dialog">
-        <p className="p-video-file-dialog">Select a video (from your PC) that you would like to play: </p>
+        <p>Select a video (from your PC) that you would like to play: </p>
         <button className="btn-video-file-dialog" onClick={onVideoFileDialogButtonClick} ref={videoFileDialogButtonRef}>Select a video...</button>
       </div>
-
-      <video width="800" height="600" controls ref={localVideoRef}>
-        <source src="" ref={localVideoSourceRef}></source>
-      </video>
-    </div >
+      <div className="div-video">
+        <video width="800" height="600" controls ref={localVideoRef}>
+          <source src="" ref={localVideoSourceRef}></source>
+        </video>
+      </div>
+      <div className="div-room-commands">
+        <p>1. Initialize a connection:</p>
+        <div className="div-first-step">
+          <button>Initialize connection</button>
+        </div>
+        <p style={{ "margin-top": "2rem" }}>2. Generate a Room ID:</p>
+        <div className="div-second-step">
+          <button>Generate Room ID</button>
+          <input type="text" readOnly />
+        </div>
+      </div>
+    </div>
   )
 }
