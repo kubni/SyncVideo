@@ -17,6 +17,8 @@ import firestoreDb from "./firebase.js";
 import video from "../../videos/danza.mp4"
 import { useEffect, useRef, useState } from "react";
 
+import { Link } from "react-router-dom"
+
 // export default function Home() {
 
 //   const [roomId, setRoomId] = useState();
@@ -236,10 +238,14 @@ export default function Home() {
     <div className="home-page">
       <div className="bubbles">
         <div className="create-bubble">
-          <p>Create bubble cruel world</p>
+          <Link to="/creator" className="btn-create-room">Create room</Link>
         </div>
         <div className="join-bubble">
-          <p>Join bubble cruel world</p>
+          <div classname="div-input-roomID">
+            <p>Room ID:</p>
+            <input type="text" className="input-roomID"></input>
+          </div>
+          <Link to="/participant" className="btn-join-room">Join room</Link>
         </div>
       </div>
     </div>
