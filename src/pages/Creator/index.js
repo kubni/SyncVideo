@@ -1,11 +1,13 @@
 import "./creator.css"
-
+import firestoreDb from "./firebase.js"
 import { useEffect, useRef } from "react"
 
 
-export default function Creator() {
+export default function Creator(props) {
 
+  // Variables
   let inputElement = null;
+
   // UseEffects
   useEffect(() => {
     inputElement = document.createElement("input"); // TODO: Check this warning
@@ -35,6 +37,10 @@ export default function Creator() {
         // Set the source and load the video
         localVideoSourceRef.current.src = url;
         localVideoRef.current.load();
+
+        // Save url so we can pass it to the participant
+        // TODO: How come this re-render doesn't "unload" the video
+        props.setVideoUrl(url);
       }
     }
   }, []);
@@ -43,10 +49,88 @@ export default function Creator() {
   const videoFileDialogButtonRef = useRef(null);
   const localVideoRef = useRef(null);
   const localVideoSourceRef = useRef(null);
+  const generateRoomIdButtonRef = useRef(null);
+  const inputIdRef = useRef(null);
+
   // Handlers
   function onVideoFileDialogButtonClick() {
     inputElement.click();
   }
+
+
+  // Handlers
+  async function onGenerateRoomIdButtonClick() {
+    console.log("HELLO CRUEL WORLD");
+    console.log("VIDEO URL: ", props.videoUrl);
+    const localStream = localVideoRef.current.captureStream();
+
+    // Push all tracks(video and audio) from localStream to our peer connection
+    localStream.getTracks().forEach((track) => {
+      props.rtcPeerConnection.addTrack(track, localStream);
+    });
+
+    // Reference Firestore collections for signaling
+    const callDocument = firestoreDb.collection("calls").doc();
+    const offerCandidates = callDocument.collection("offerCandidates");
+    const answerCandidates = callDocument.collection("answerCandidates");
+
+    // Set the ID
+    inputIdRef.current.value = callDocument.id;
+
+    // Save creator's ICE candidates to the db.
+    props.rtcPeerConnection.onicecandidate = (event) => {
+      event.candidate && offerCandidates.add(event.candidate.toJSON());
+    };
+
+    // Create the offer
+    const offerDescription = await props.rtcPeerConnection.createOffer(); // TODO: Without setter?
+    await props.rtcPeerConnection.setLocalDescription(offerDescription);
+
+    const offer = {
+      sdp: offerDescription.sdp,
+      type: offerDescription.type,
+    };
+
+    // Write the offer object to the database
+    await callDocument.set({ offer });
+
+    // Listen for the changes in call document
+    callDocument.onSnapshot((snapshot) => {
+      const data = snapshot.data();
+      // If we don't have description set for the remote stream AND there is an answer waiting for us to do something with it
+      if (!props.rtcPeerConnection.currentRemoteDescription && data?.answer) {
+        const answerDescription = new RTCSessionDescription(data.answer);
+        props.rtcPeerConnection.setRemoteDescription(answerDescription);
+      }
+    });
+
+    // Apart from answer, we need to add ICE candidate to the peer connection
+    answerCandidates.onSnapshot((snapshot) => {
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === "added") {
+          const candidate = new RTCIceCandidate(change.doc.data());
+          props.rtcPeerConnection.addIceCandidate(candidate);
+        }
+      });
+    });
+
+    props.setRtcPeerConnection(props.rtcPeerConnection);
+
+
+
+    // TODO: This will be done on /participant page or in onJoinButtonClick in Home
+    // props.rtcPeerConnection.ontrack = (event) => {
+    //   event.streams[0].getTracks().forEach((track) => {
+    //     console.log("Adding the following track to the remote stream: ", track);
+    //     remoteStream.addTrack(track);
+    //   });
+    // };
+
+    // TODO: Enable/disable other buttons
+  }
+
+
+
 
 
   // JSX
@@ -54,7 +138,7 @@ export default function Creator() {
     <div className="creator-page">
       <p>Hello cruel world</p>
       <div className="div-video-file-dialog">
-        <p>Select a video (from your PC) that you would like to play: </p>
+        <p>1. Select a video (from your PC) that you would like to play: </p>
         <button className="btn-video-file-dialog" onClick={onVideoFileDialogButtonClick} ref={videoFileDialogButtonRef}>Select a video...</button>
       </div>
       <div className="div-video">
@@ -63,16 +147,13 @@ export default function Creator() {
         </video>
       </div>
       <div className="div-room-commands">
-        <p>1. Initialize a connection:</p>
-        <div className="div-first-step">
-          <button>Initialize connection</button>
+        <p style={{ marginTop: "2rem" }}>2. Generate a Room ID:</p>
+        <div className="div-generate-room-id">
+          <button onClick={onGenerateRoomIdButtonClick} ref={generateRoomIdButtonRef}>Generate Room ID</button>
+          <input type="text" readOnly ref={inputIdRef} />
         </div>
-        <p style={{ "margin-top": "2rem" }}>2. Generate a Room ID:</p>
-        <div className="div-second-step">
-          <button>Generate Room ID</button>
-          <input type="text" readOnly />
-        </div>
+        <p>3. Send it to a friend and enjoy</p>
       </div>
     </div>
-  )
+  );
 }

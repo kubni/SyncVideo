@@ -10,10 +10,12 @@
 
 .btn-create-room {
     background-color: var(--clr-home-secondary);
+    border: 1px solid black;
 }
 
 .btn-join-room {
     background-color: var(--clr-home-primary);
+
 }
 
 .bubbles {
@@ -44,5 +46,12 @@
 
 .div-input-roomID {
     display: flex;
+    flex-direction: column;
     gap: 0.4rem;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
 }

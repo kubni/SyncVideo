@@ -19,11 +19,7 @@
     align-items: center;
 }
 
-.div-first-step {
-
-}
-
-.div-second-step {
+.div-generate-room-id {
     display: flex;
     gap: 1rem;
     align-items: center;

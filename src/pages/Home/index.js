@@ -234,6 +234,15 @@ import { Link } from "react-router-dom"
 
 export default function Home() {
 
+  // States
+  const [roomID, setRoomID] = useState("");
+  // Refs
+  const inputRoomIdRef = useRef(null);
+
+  // Handlers
+  function onFormSubmit(event) {
+    event.preventDefault();
+  }
   return (
     <div className="home-page">
       <div className="bubbles">
@@ -242,10 +251,17 @@ export default function Home() {
         </div>
         <div className="join-bubble">
           <div className="div-input-roomID">
+            {/* <Link to="/participant" className="btn-join-room">Join room</Link> */}
             <p>Room ID:</p>
-            <input type="text" className="input-roomID"></input>
+            <form onSubmit={onFormSubmit}>
+              <input
+                type="text"
+                value={roomID}
+                onChange={(event) => setRoomID(event.target.value)}
+              />
+              <button className="btn-join-room">Join room</button>
+            </form>
           </div>
-          <Link to="/participant" className="btn-join-room">Join room</Link>
         </div>
       </div>
     </div>
