@@ -1,0 +1,9 @@
+.div-video-file-dialog {
+    display: flex;
+    justify-content: center;
+    gap: 0.4rem;
+}
+
+.p-video-file-dialog {
+    margin-top: 1rem;
+}

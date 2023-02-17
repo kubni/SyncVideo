@@ -238,10 +238,10 @@ export default function Home() {
     <div className="home-page">
       <div className="bubbles">
         <div className="create-bubble">
-          <Link to="/creator" className="btn-create-room">Create room</Link>
+          <Link to="/creator" className="btn-create-room">Create a room</Link>
         </div>
         <div className="join-bubble">
-          <div classname="div-input-roomID">
+          <div className="div-input-roomID">
             <p>Room ID:</p>
             <input type="text" className="input-roomID"></input>
           </div>
