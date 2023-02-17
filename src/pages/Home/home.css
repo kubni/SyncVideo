@@ -1,0 +1,19 @@
+.bubbles {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    gap: 10rem;
+}
+
+.create-bubble {
+    background-color: var(--clr-home-primary);
+    padding: 22rem 9rem;
+    border-radius: 22rem;
+}
+
+.join-bubble {
+    background-color: var(--clr-home-secondary);
+    padding: 22rem 9rem;
+    border-radius: 22rem;
+}
