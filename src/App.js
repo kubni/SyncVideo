@@ -20,6 +20,7 @@ export default function App() {
   // States
   const [rtcPeerConnection, setRtcPeerConnection] = useState(new RTCPeerConnection(servers));
   const [videoUrl, setVideoUrl] = useState("");
+  const [remoteStream, setRemoteStream] = useState(new MediaStream());
 
   return (
     <BrowserRouter>
@@ -33,6 +34,8 @@ export default function App() {
               setRtcPeerConnection={setRtcPeerConnection}
               videoUrl={videoUrl}
               setVideoUrl={setVideoUrl}
+              remoteStream={remoteStream}
+              setRemoteStream={setRemoteStream}
             />
           }
         />
@@ -44,6 +47,8 @@ export default function App() {
               setRtcPeerConnection={setRtcPeerConnection}
               videoUrl={videoUrl}
               setVideoUrl={setVideoUrl}
+              remoteStream={remoteStream}
+              setRemoteStream={setRemoteStream}
             />
           }
         />

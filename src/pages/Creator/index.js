@@ -2,7 +2,6 @@ import "./creator.css"
 import firestoreDb from "./firebase.js"
 import { useEffect, useRef } from "react"
 
-
 export default function Creator(props) {
 
   // Variables
@@ -14,14 +13,12 @@ export default function Creator(props) {
     inputElement.type = "file";
 
     // Add an event listener for onchange event so we can read the contents of the file
-    // TODO: Why does the `change` event even occur?
-    // Probably because it was click()-ed
     inputElement.onchange = (event) => {
       const file = event.target.files[0];
-      console.log(file);
-
       const fileReader = new FileReader();
-      fileReader.readAsArrayBuffer(file); // IMPORTANT: Since readAsDataURL doesn't work with large files
+
+      // IMPORTANT: Since readAsDataURL doesn't work well with large files, we use readAsArrayBuffer
+      fileReader.readAsArrayBuffer(file);
 
       // Create the handler for when file reader loads the file
       fileReader.onload = (event) => {
@@ -57,11 +54,8 @@ export default function Creator(props) {
     inputElement.click();
   }
 
-
   // Handlers
   async function onGenerateRoomIdButtonClick() {
-    console.log("HELLO CRUEL WORLD");
-    console.log("VIDEO URL: ", props.videoUrl);
     const localStream = localVideoRef.current.captureStream();
 
     // Push all tracks(video and audio) from localStream to our peer connection
@@ -70,20 +64,37 @@ export default function Creator(props) {
     });
 
     // Reference Firestore collections for signaling
-    const callDocument = firestoreDb.collection("calls").doc();
-    const offerCandidates = callDocument.collection("offerCandidates");
-    const answerCandidates = callDocument.collection("answerCandidates");
+    let callDocument = firestoreDb.collection("calls").doc();
+    let offerCandidates = callDocument.collection("offerCandidates");
+    let answerCandidates = callDocument.collection("answerCandidates");
 
     // Set the ID
     inputIdRef.current.value = callDocument.id;
 
     // Save creator's ICE candidates to the db.
     props.rtcPeerConnection.onicecandidate = (event) => {
-      event.candidate && offerCandidates.add(event.candidate.toJSON());
+      /* If the call document is still being created, we wait for 1s for
+       * Firebase to finish its creation so we can add offerCandidates to it.
+       * By doing this, we avoid the race condition.
+       * TODO: Possibly unneeded
+       */
+      if (!callDocument) {
+        setTimeout(() => {
+          event.candidate && offerCandidates.add(event.candidate.toJSON());
+        }, 1000);
+      }
+      else {
+        event.candidate && offerCandidates.add(event.candidate.toJSON());
+      }
     };
 
     // Create the offer
-    const offerDescription = await props.rtcPeerConnection.createOffer(); // TODO: Without setter?
+    const offerDescription = await props.rtcPeerConnection.createOffer({
+      mandatory: {
+        "OfferToReceiveVideo": true,
+        "OfferToReceiveAudio": true
+      }
+    });
     await props.rtcPeerConnection.setLocalDescription(offerDescription);
 
     const offer = {
@@ -113,25 +124,7 @@ export default function Creator(props) {
         }
       });
     });
-
-    props.setRtcPeerConnection(props.rtcPeerConnection);
-
-
-
-    // TODO: This will be done on /participant page or in onJoinButtonClick in Home
-    // props.rtcPeerConnection.ontrack = (event) => {
-    //   event.streams[0].getTracks().forEach((track) => {
-    //     console.log("Adding the following track to the remote stream: ", track);
-    //     remoteStream.addTrack(track);
-    //   });
-    // };
-
-    // TODO: Enable/disable other buttons
   }
-
-
-
-
 
   // JSX
   return (
@@ -144,6 +137,7 @@ export default function Creator(props) {
       <div className="div-video">
         <video width="800" height="600" controls ref={localVideoRef}>
           <source src="" ref={localVideoSourceRef}></source>
+          Your browser does not support HTML5 video.
         </video>
       </div>
       <div className="div-room-commands">
