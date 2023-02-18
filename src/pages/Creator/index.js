@@ -6,6 +6,10 @@ export default function Creator(props) {
 
   // Variables
   let inputElement = null;
+  const offerOptions = {
+    offerToReceiveAudio: true,
+    offerToReceiveVideo: true
+  };
 
   // UseEffects
   useEffect(() => {
@@ -89,12 +93,7 @@ export default function Creator(props) {
     };
 
     // Create the offer
-    const offerDescription = await props.rtcPeerConnection.createOffer({
-      mandatory: {
-        "OfferToReceiveVideo": true,
-        "OfferToReceiveAudio": true
-      }
-    });
+    const offerDescription = await props.rtcPeerConnection.createOffer(offerOptions);
     await props.rtcPeerConnection.setLocalDescription(offerDescription);
 
     const offer = {
@@ -108,7 +107,7 @@ export default function Creator(props) {
     // Listen for the changes in call document
     callDocument.onSnapshot((snapshot) => {
       const data = snapshot.data();
-      // If we don't have description set for the remote stream AND there is an answer waiting for us to do something with it
+      // If we don't have description set for the remote stream AND there is an answer waiting for us
       if (!props.rtcPeerConnection.currentRemoteDescription && data?.answer) {
         const answerDescription = new RTCSessionDescription(data.answer);
         props.rtcPeerConnection.setRemoteDescription(answerDescription);
@@ -129,7 +128,6 @@ export default function Creator(props) {
   // JSX
   return (
     <div className="creator-page">
-      <p>Hello cruel world</p>
       <div className="div-video-file-dialog">
         <p>1. Select a video (from your PC) that you would like to play: </p>
         <button className="btn-video-file-dialog" onClick={onVideoFileDialogButtonClick} ref={videoFileDialogButtonRef}>Select a video...</button>

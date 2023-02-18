@@ -11,8 +11,12 @@ export default function Participant(props) {
 
   // UseEffects
   useEffect(() => {
-    const answerFunction = async () => {
+    const answerOptions = {
+      offerToReceiveAudio: true,
+      offerToReceiveVideo: true
+    };
 
+    const answerFunction = async () => {
       const localStream = new MediaStream();
       props.rtcPeerConnection.ontrack = (event) => {
         event.streams[0].getTracks().forEach((track) => {
@@ -35,12 +39,7 @@ export default function Participant(props) {
       const offerDescription = callData.offer;
       await props.rtcPeerConnection.setRemoteDescription(new RTCSessionDescription(offerDescription));
 
-      const answerDescription = await props.rtcPeerConnection.createAnswer({
-        mandatory: {
-          "OfferToReceiveVideo": true,
-          "OfferToReceiveAudio": true
-        }
-      });
+      const answerDescription = await props.rtcPeerConnection.createAnswer(answerOptions);
       await props.rtcPeerConnection.setLocalDescription(answerDescription);
 
       const answer = {
