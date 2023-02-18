@@ -60,7 +60,13 @@ export default function Creator(props) {
 
   // Handlers
   async function onGenerateRoomIdButtonClick() {
-    const localStream = localVideoRef.current.captureStream();
+
+    // We need to check if user is using Firefox or not since capturing the stream is different.
+    const userAgent = navigator.userAgent;
+    let localStream = new MediaStream();
+    userAgent.includes("Firefox")
+      ? localStream = localVideoRef.current.mozCaptureStream()
+      : localStream = localVideoRef.current.captureStream();
 
     // Push all tracks(video and audio) from localStream to our peer connection
     localStream.getTracks().forEach((track) => {
@@ -77,19 +83,7 @@ export default function Creator(props) {
 
     // Save creator's ICE candidates to the db.
     props.rtcPeerConnection.onicecandidate = (event) => {
-      /* If the call document is still being created, we wait for 1s for
-       * Firebase to finish its creation so we can add offerCandidates to it.
-       * By doing this, we avoid the race condition.
-       * TODO: Possibly unneeded
-       */
-      if (!callDocument) {
-        setTimeout(() => {
-          event.candidate && offerCandidates.add(event.candidate.toJSON());
-        }, 1000);
-      }
-      else {
-        event.candidate && offerCandidates.add(event.candidate.toJSON());
-      }
+      event.candidate && offerCandidates.add(event.candidate.toJSON());
     };
 
     // Create the offer
