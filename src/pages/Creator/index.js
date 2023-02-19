@@ -87,15 +87,15 @@ export default function Creator(props) {
     };
 
     // Create the offer
-    const offerDescription = await props.rtcPeerConnection.createOffer(offerOptions);
+    const offerDescription = await props.rtcPeerConnection.createOffer(offerOptions)
     await props.rtcPeerConnection.setLocalDescription(offerDescription);
 
+    // Write the offer object to the database
     const offer = {
       sdp: offerDescription.sdp,
       type: offerDescription.type,
     };
 
-    // Write the offer object to the database
     await callDocument.set({ offer });
 
     // Listen for the changes in call document
