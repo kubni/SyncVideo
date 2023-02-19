@@ -5,19 +5,24 @@ import { useEffect, useRef, useState } from "react"
 export default function Creator(props) {
 
   // Variables
-  let inputElement = null;
+  // let inputElement = null;
   const offerOptions = {
     offerToReceiveAudio: true,
     offerToReceiveVideo: true
   };
 
+
+  // States
+  const [inputElement, updateInputElement] = useState();
+  const [isActive, setIsActive] = useState(false);
+
   // UseEffects
   useEffect(() => {
-    inputElement = document.createElement("input"); // TODO: Check this warning
-    inputElement.type = "file";
+    let inputElementCopy = document.createElement("input");
+    inputElementCopy.type = "file";
 
     // Add an event listener for onchange event so we can read the contents of the file
-    inputElement.onchange = (event) => {
+    inputElementCopy.onchange = (event) => {
       const file = event.target.files[0];
       const fileReader = new FileReader();
 
@@ -45,10 +50,8 @@ export default function Creator(props) {
         setIsActive(true);
       }
     }
+    updateInputElement(inputElementCopy);
   }, []);
-
-  // States
-  const [isActive, setIsActive] = useState(false);
 
 
   // Refs
