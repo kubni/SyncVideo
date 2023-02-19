@@ -34,7 +34,7 @@ export default function Participant(props) {
         event.candidate && answerCandidates.add(event.candidate.toJSON());
       };
 
-      const callData = (await callDocument.get()).data();
+      const callData = (await callDocument.get()).data(); // TODO: Undefined on FIrefox
 
       const offerDescription = callData.offer;
       await props.rtcPeerConnection.setRemoteDescription(new RTCSessionDescription(offerDescription));
@@ -73,10 +73,11 @@ export default function Participant(props) {
 
   return (
     <div className="participant-page">
-      <div className="div-video">
+      <div className="remote-video">
         <video width="800" height="600" controls muted autoPlay ref={localVideoRef}>
           Your browser doesn't support HTML5 video.
         </video>
+        <p>Notice: By default, the video is muted.</p>
       </div>
     </div>
   )

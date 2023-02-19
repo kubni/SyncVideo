@@ -3,6 +3,12 @@
     justify-content: center;
     align-items: center;
     gap: 0.4rem;
+    margin-top: 1rem;
+}
+
+.btn-video-file-dialog {
+    background-color: var(--clr-home-secondary);
+    color: white;
 }
 
 .div-video {
@@ -23,4 +29,15 @@
     display: flex;
     gap: 1rem;
     align-items: center;
+}
+
+.btn-generate-room-id {
+   background-color: var(--clr-home-secondary);
+   color: white;
+}
+
+.btn-leave-room {
+    margin-top: 3rem;
+    background-color: rgba(153,0,51, 100%);
+    color: white;
 }

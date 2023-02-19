@@ -1,6 +1,6 @@
 import "./creator.css"
 import firestoreDb from "./firebase.js"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 
 export default function Creator(props) {
 
@@ -42,9 +42,14 @@ export default function Creator(props) {
         // Save url so we can pass it to the participant
         // TODO: How come this re-render doesn't "unload" the video
         props.setVideoUrl(url);
+        setIsActive(true);
       }
     }
   }, []);
+
+  // States
+  const [isActive, setIsActive] = useState(false);
+
 
   // Refs
   const videoFileDialogButtonRef = useRef(null);
@@ -119,14 +124,43 @@ export default function Creator(props) {
     });
   }
 
+  async function onLeaveRoomButtonClick() {
+    props.rtcPeerConnection.close();
+    const roomID = inputIdRef.current.value;
+    if (roomID) {
+      let roomRef = firestoreDb.collection("calls").doc(roomID);
+      await roomRef
+        .collection("answerCandidates")
+        .get()
+        .then((querySnapshot) => {
+          querySnapshot.forEach((doc) => {
+            doc.ref.delete();
+          });
+        });
+      await roomRef
+        .collection("offerCandidates")
+        .get()
+        .then((querySnapshot) => {
+          querySnapshot.forEach((doc) => {
+            doc.ref.delete();
+          });
+        });
+      await roomRef.delete();
+    }
+    window.location.reload();
+  }
+
+
+
+
   // JSX
   return (
     <div className="creator-page">
       <div className="div-video-file-dialog">
-        <p>1. Select a video (from your PC) that you would like to play: </p>
-        <button className="btn-video-file-dialog" onClick={onVideoFileDialogButtonClick} ref={videoFileDialogButtonRef}>Select a video...</button>
+        <p>1. Select a MP4 video (from your PC) that you would like to play: </p>
+        <button className="btn-video-file-dialog" onClick={onVideoFileDialogButtonClick} ref={videoFileDialogButtonRef}>Select a video</button>
       </div>
-      <div className="div-video">
+      <div style={!isActive ? { display: "none" } : { display: "flex" }} className="div-video">
         <video width="800" height="600" controls ref={localVideoRef}>
           <source src="" ref={localVideoSourceRef}></source>
           Your browser does not support HTML5 video.
@@ -135,10 +169,10 @@ export default function Creator(props) {
       <div className="div-room-commands">
         <p style={{ marginTop: "2rem" }}>2. Generate a Room ID:</p>
         <div className="div-generate-room-id">
-          <button onClick={onGenerateRoomIdButtonClick} ref={generateRoomIdButtonRef}>Generate Room ID</button>
+          <button className="btn-generate-room-id" onClick={onGenerateRoomIdButtonClick} ref={generateRoomIdButtonRef}>Generate Room ID</button>
           <input type="text" readOnly ref={inputIdRef} />
         </div>
-        <p>3. Send it to a friend and enjoy</p>
+        <button className="btn-leave-room" onClick={onLeaveRoomButtonClick}>Leave Room</button>
       </div>
     </div>
   );
