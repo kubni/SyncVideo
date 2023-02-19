@@ -2,7 +2,8 @@ import "./creator.css"
 import firestoreDb from "./firebase.js"
 import { useEffect, useRef, useState } from "react"
 
-export default function Creator(props) {
+
+export default function Creator({ setVideoUrl, rtcPeerConnection }) {
 
   // Variables
   // let inputElement = null;
@@ -46,12 +47,12 @@ export default function Creator(props) {
 
         // Save url so we can pass it to the participant
         // TODO: How come this re-render doesn't "unload" the video
-        props.setVideoUrl(url);
+        setVideoUrl(url);
         setIsActive(true);
       }
     }
     updateInputElement(inputElementCopy);
-  }, []);
+  }, [setVideoUrl]);
 
 
   // Refs
@@ -78,7 +79,7 @@ export default function Creator(props) {
 
     // Push all tracks(video and audio) from localStream to our peer connection
     localStream.getTracks().forEach((track) => {
-      props.rtcPeerConnection.addTrack(track, localStream);
+      rtcPeerConnection.addTrack(track, localStream);
     });
 
     // Reference Firestore collections for signaling
@@ -90,13 +91,13 @@ export default function Creator(props) {
     inputIdRef.current.value = callDocument.id;
 
     // Save creator's ICE candidates to the db.
-    props.rtcPeerConnection.onicecandidate = (event) => {
+    rtcPeerConnection.onicecandidate = (event) => {
       event.candidate && offerCandidates.add(event.candidate.toJSON());
     };
 
     // Create the offer
-    const offerDescription = await props.rtcPeerConnection.createOffer(offerOptions)
-    await props.rtcPeerConnection.setLocalDescription(offerDescription);
+    const offerDescription = await rtcPeerConnection.createOffer(offerOptions)
+    await rtcPeerConnection.setLocalDescription(offerDescription);
 
     // Write the offer object to the database
     const offer = {
@@ -110,9 +111,9 @@ export default function Creator(props) {
     callDocument.onSnapshot((snapshot) => {
       const data = snapshot.data();
       // If we don't have description set for the remote stream AND there is an answer waiting for us
-      if (!props.rtcPeerConnection.currentRemoteDescription && data?.answer) {
+      if (!rtcPeerConnection.currentRemoteDescription && data?.answer) {
         const answerDescription = new RTCSessionDescription(data.answer);
-        props.rtcPeerConnection.setRemoteDescription(answerDescription);
+        rtcPeerConnection.setRemoteDescription(answerDescription);
       }
     });
 
@@ -121,14 +122,14 @@ export default function Creator(props) {
       snapshot.docChanges().forEach((change) => {
         if (change.type === "added") {
           const candidate = new RTCIceCandidate(change.doc.data());
-          props.rtcPeerConnection.addIceCandidate(candidate);
+          rtcPeerConnection.addIceCandidate(candidate);
         }
       });
     });
   }
 
   async function onLeaveRoomButtonClick() {
-    props.rtcPeerConnection.close();
+    rtcPeerConnection.close();
     const roomID = inputIdRef.current.value;
     if (roomID) {
       let roomRef = firestoreDb.collection("calls").doc(roomID);
@@ -175,7 +176,7 @@ export default function Creator(props) {
           <button className="btn-generate-room-id" onClick={onGenerateRoomIdButtonClick} ref={generateRoomIdButtonRef}>Generate Room ID</button>
           <input type="text" readOnly ref={inputIdRef} />
         </div>
-        <button className="btn-leave-room" onClick={onLeaveRoomButtonClick}>Leave Room</button>
+        <button className="btn-reset-room" onClick={onLeaveRoomButtonClick}>Reset Room</button>
       </div>
     </div>
   );
