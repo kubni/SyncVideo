@@ -18,7 +18,7 @@ export default function Home() {
         </div>
         <div className="join-bubble">
           <div className="div-input-roomID">
-            <p>Room ID:</p>
+            <p style={{ color: "white" }}>Room ID:</p>
             <input
               type="text"
               value={roomID}

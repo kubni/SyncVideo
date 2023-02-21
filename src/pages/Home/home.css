@@ -9,6 +9,12 @@
     box-shadow: 10px 10px rgba(0, 0, 0, 40%);
 }
 
+.btn-create-room:hover, .btn-join-room:hover {
+    /* background-color: rgba(var(--clr-home-secondary), 50%); */
+    background-color: rgba(0, 0, 0, 30%)
+}
+
+
 .btn-create-room {
     background-color: var(--clr-home-secondary);
 }
