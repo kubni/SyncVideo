@@ -11,7 +11,7 @@ export default function Home() {
   const [roomID, setRoomID] = useState("");
 
   return (
-    <div className="home-page">
+    <>
       <div className="bubbles">
         <div className="create-bubble">
           <Link to="/creator" className="btn-create-room">Create a room</Link>
@@ -27,7 +27,7 @@ export default function Home() {
             <Link to="/participant" state={{ roomID: roomID }} className="btn-join-room">Join room</Link>
           </div>
         </div>
-      </div >
-    </div >
+      </div>
+    </>
   );
 }

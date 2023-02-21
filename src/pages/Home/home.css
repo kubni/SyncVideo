@@ -10,30 +10,32 @@
 
 .btn-create-room {
     background-color: var(--clr-home-secondary);
-    border: 1px solid black;
+    /* border: 1px solid black; */
 }
 
 .btn-join-room {
     background-color: var(--clr-home-primary);
-
 }
 
 .bubbles {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-around;
+    /* justify-content: center; */
     min-height: 100vh;
-    gap: 10rem;
 }
 
 .bubbles > * {
-    padding: 22rem 9rem;
-    border-radius: 22rem;
+    border-radius: 6.25rem;
     border: 2px solid;
     box-shadow: 5px 5px rgba(0, 0, 0, 100%);
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    height: 80vh;
+    justify-content: center;
+    align-items: center;
+    width: 30%;
 }
 
 .create-bubble {
@@ -46,6 +48,19 @@
 
 .div-input-roomID {
     display: flex;
+    flex-direction: column;
     align-items: center;
     gap: 0.4rem;
+}
+
+/* Phones */
+@media screen and (max-width: 850px) {
+  .bubbles {
+    flex-direction: column
+  }
+
+  .bubbles > * {
+    height: 40vh;
+    width: 90vw;
+  }
 }
