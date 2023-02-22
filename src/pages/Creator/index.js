@@ -2,7 +2,6 @@ import "./creator.css"
 import firestoreDb from "./firebase.js"
 import { useEffect, useRef, useState } from "react"
 
-
 export default function Creator({ setVideoUrl, rtcPeerConnection }) {
 
   // Variables
@@ -11,7 +10,6 @@ export default function Creator({ setVideoUrl, rtcPeerConnection }) {
     offerToReceiveAudio: true,
     offerToReceiveVideo: true
   };
-
 
   // States
   const [inputElement, updateInputElement] = useState();
@@ -176,6 +174,9 @@ export default function Creator({ setVideoUrl, rtcPeerConnection }) {
           <button className="btn-generate-room-id" onClick={onGenerateRoomIdButtonClick} ref={generateRoomIdButtonRef}>Generate Room ID</button>
           <input type="text" readOnly ref={inputIdRef} />
         </div>
+      </div>
+      <div className="reset-section">
+        <p>Reset everything:</p>
         <button className="btn-reset-room" onClick={onLeaveRoomButtonClick}>Reset Room</button>
       </div>
     </div>
