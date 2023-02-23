@@ -1,0 +1,13 @@
+.chat {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.online-users {
+
+}
+
+.message-history {
+
+}

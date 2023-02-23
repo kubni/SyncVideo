@@ -1,4 +1,5 @@
 import "./creator.css"
+import Chat from "../../components/Chat"
 import firestoreDb from "./firebase.js"
 import { useEffect, useRef, useState } from "react"
 
@@ -204,6 +205,8 @@ export default function Creator({ setVideoUrl, pc }) {
       <input type="text" ref={messageInputRef} />
       <button className="test-button" onClick={onSendMessageButtonClick} >Send a test message</button>
 
+      {/* WIP */}
+      <Chat />
     </div>
   );
 }
