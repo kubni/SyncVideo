@@ -54,7 +54,6 @@ export default function Creator({ setVideoUrl, pc }) {
     updateInputElement(inputElementCopy);
   }, [setVideoUrl]);
 
-  // HACK: DataChannels
   useEffect(() => {
     function handleLocalChannelStatusChange(event) {
       if (localChannelCopy) {
@@ -70,9 +69,10 @@ export default function Creator({ setVideoUrl, pc }) {
     updateLocalChannel(localChannelCopy);
     // TODO: Cleanup
     return () => {
-
+      pc.removeEventListener("open", handleLocalChannelStatusChange);
+      pc.removeEventListener("close", handleLocalChannelStatusChange);
     }
-  }, [pc]); // FIXME: Excess rerenders, possibly due to pc in dependency array?
+  }, [pc]);
 
   // Refs
   const videoFileDialogButtonRef = useRef(null);

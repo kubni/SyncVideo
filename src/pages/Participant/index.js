@@ -85,24 +85,27 @@ export default function Participant({ pc }) {
       remoteChannelMessageRef.current.value = event.data;
     }
 
-    // FIXME: This procs many times (probably because of rerenders)
-    pc.addEventListener("datachannel", event => {
+    // FIXME: We enter here 5 times because of rerenders
+    function handleDataChannelEvent(event) {
       console.log("Data channel received: ", remoteChannelCopy);
+
       remoteChannelCopy = event.channel;
       remoteChannelCopy.onmessage = handleReceiveMessage;
       remoteChannelCopy.onopen = handleRemoteChannelStatusChange;
       remoteChannelCopy.onclose = handleRemoteChannelStatusChange;
 
       updateRemoteChannel(remoteChannelCopy);
-    });
-    // TODO: Cleanup function
-    return () => {
-
     }
-  })
 
+    pc.addEventListener("datachannel", handleDataChannelEvent);
 
-
+    return () => {
+      pc.removeEventListener("message", handleReceiveMessage); // TODO: handleReceiveMessage or remoteChannel.onmessage as 2nd argument
+      pc.removeEventListener("open", handleRemoteChannelStatusChange);
+      pc.removeEventListener("close", handleRemoteChannelStatusChange);
+      pc.removeEventListener("datachannel", handleDataChannelEvent);
+    }
+  }, [pc]); // TODO: We can make a pc copy in order to not have it in dep. array
 
   // Refs
   const localVideoRef = useRef(null);
