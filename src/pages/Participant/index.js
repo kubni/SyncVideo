@@ -2,12 +2,15 @@ import "./participant.css"
 
 import firestoreDb from "../Creator/firebase.js" // TODO: Move this file elsewhere, outside of Creator page directory
 import { useLocation } from "react-router-dom" // TODO: Read docs
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 
-export default function Participant(props) {
+export default function Participant({ pc }) {
 
   // Variables
   const location = useLocation();
+
+  // States
+  const [remoteChannel, updateRemoteChannel] = useState(pc.createDataChannel("Remote data channel"));
 
   // UseEffects
   useEffect(() => {
@@ -18,7 +21,7 @@ export default function Participant(props) {
 
     const answerFunction = async () => {
       const localStream = new MediaStream();
-      props.rtcPeerConnection.ontrack = (event) => {
+      pc.ontrack = (event) => {
         event.streams[0].getTracks().forEach((track) => {
           localStream.addTrack(track);
         });
@@ -30,17 +33,17 @@ export default function Participant(props) {
       const answerCandidates = callDocument.collection("answerCandidates");
       const offerCandidates = callDocument.collection("offerCandidates");
 
-      props.rtcPeerConnection.onicecandidate = (event) => {
+      pc.onicecandidate = (event) => {
         event.candidate && answerCandidates.add(event.candidate.toJSON());
       };
 
       const callData = (await callDocument.get()).data(); // TODO: Undefined on FIrefox
 
       const offerDescription = callData.offer;
-      await props.rtcPeerConnection.setRemoteDescription(new RTCSessionDescription(offerDescription));
+      await pc.setRemoteDescription(new RTCSessionDescription(offerDescription));
 
-      const answerDescription = await props.rtcPeerConnection.createAnswer(answerOptions);
-      await props.rtcPeerConnection.setLocalDescription(answerDescription);
+      const answerDescription = await pc.createAnswer(answerOptions);
+      await pc.setLocalDescription(answerDescription);
 
       const answer = {
         type: answerDescription.type,
@@ -54,7 +57,7 @@ export default function Participant(props) {
           console.log(change);
           if (change.type === "added") {
             let data = change.doc.data();
-            props.rtcPeerConnection.addIceCandidate(new RTCIceCandidate(data));
+            pc.addIceCandidate(new RTCIceCandidate(data));
           }
         });
       });
@@ -66,10 +69,44 @@ export default function Participant(props) {
     return () => {
       // TODO: Cleanup
     }
-  }, [location.state?.roomID, props.rtcPeerConnection]);
+  }, [location.state?.roomID, pc]);
+
+  useEffect(() => {
+    let remoteChannelCopy = pc.createDataChannel("Copy of remote data channel");
+
+    function handleRemoteChannelStatusChange(event) {
+      if (remoteChannelCopy) {
+        console.log(`Receive channel's status has changed to ${remoteChannelCopy.readyState}`);
+      }
+    }
+
+    function handleReceiveMessage(event) {
+      console.log("Incoming data: ", event.data);
+      remoteChannelMessageRef.current.value = event.data;
+    }
+
+    // FIXME: This procs many times (probably because of rerenders)
+    pc.addEventListener("datachannel", event => {
+      console.log("Data channel received: ", remoteChannelCopy);
+      remoteChannelCopy = event.channel;
+      remoteChannelCopy.onmessage = handleReceiveMessage;
+      remoteChannelCopy.onopen = handleRemoteChannelStatusChange;
+      remoteChannelCopy.onclose = handleRemoteChannelStatusChange;
+
+      updateRemoteChannel(remoteChannelCopy);
+    });
+    // TODO: Cleanup function
+    return () => {
+
+    }
+  })
+
+
+
 
   // Refs
   const localVideoRef = useRef(null);
+  const remoteChannelMessageRef = useRef(null);
 
   return (
     <div className="participant-page">
@@ -78,6 +115,8 @@ export default function Participant(props) {
           Your browser doesn't support HTML5 video.
         </video>
         <p>Notice: By default, the video is muted.</p>
+
+        <input type="text" readOnly ref={remoteChannelMessageRef} />
       </div>
     </div>
   )

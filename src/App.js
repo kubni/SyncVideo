@@ -36,7 +36,7 @@ export default function App() {
   };
 
   // States
-  const [rtcPeerConnection, setRtcPeerConnection] = useState(new RTCPeerConnection(servers));
+  const [pc, setRtcPeerConnection] = useState(new RTCPeerConnection(servers));
   const [videoUrl, setVideoUrl] = useState("");
   const [remoteStream, setRemoteStream] = useState(new MediaStream());
 
@@ -48,7 +48,7 @@ export default function App() {
           path="/creator"
           element={
             <Creator
-              rtcPeerConnection={rtcPeerConnection}
+              pc={pc}
               setRtcPeerConnection={setRtcPeerConnection}
               videoUrl={videoUrl}
               setVideoUrl={setVideoUrl}
@@ -61,7 +61,7 @@ export default function App() {
           path="/participant"
           element={
             <Participant
-              rtcPeerConnection={rtcPeerConnection}
+              pc={pc}
               setRtcPeerConnection={setRtcPeerConnection}
               videoUrl={videoUrl}
               setVideoUrl={setVideoUrl}

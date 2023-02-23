@@ -2,10 +2,9 @@ import "./creator.css"
 import firestoreDb from "./firebase.js"
 import { useEffect, useRef, useState } from "react"
 
-export default function Creator({ setVideoUrl, rtcPeerConnection }) {
+export default function Creator({ setVideoUrl, pc }) {
 
   // Variables
-  // let inputElement = null;
   const offerOptions = {
     offerToReceiveAudio: true,
     offerToReceiveVideo: true
@@ -14,6 +13,9 @@ export default function Creator({ setVideoUrl, rtcPeerConnection }) {
   // States
   const [inputElement, updateInputElement] = useState();
   const [isActive, setIsActive] = useState(false);
+  const [localChannel, updateLocalChannel] = useState(pc.createDataChannel("Local data channel"));
+
+
 
   // UseEffects
   useEffect(() => {
@@ -52,6 +54,25 @@ export default function Creator({ setVideoUrl, rtcPeerConnection }) {
     updateInputElement(inputElementCopy);
   }, [setVideoUrl]);
 
+  // HACK: DataChannels
+  useEffect(() => {
+    function handleLocalChannelStatusChange(event) {
+      if (localChannelCopy) {
+        const state = localChannelCopy.readyState;
+        state === "open" ? console.log("Local channel is open!") : console.log("Local channel is closed!");
+      }
+    }
+
+    let localChannelCopy = pc.createDataChannel("Copy of local data channel");
+    localChannelCopy.onopen = handleLocalChannelStatusChange;
+    localChannelCopy.onclose = handleLocalChannelStatusChange;
+
+    updateLocalChannel(localChannelCopy);
+    // TODO: Cleanup
+    return () => {
+
+    }
+  }, [pc]); // FIXME: Excess rerenders, possibly due to pc in dependency array?
 
   // Refs
   const videoFileDialogButtonRef = useRef(null);
@@ -59,15 +80,14 @@ export default function Creator({ setVideoUrl, rtcPeerConnection }) {
   const localVideoSourceRef = useRef(null);
   const generateRoomIdButtonRef = useRef(null);
   const inputIdRef = useRef(null);
+  const messageInputRef = useRef(null);
 
-  // Handlers
+  // JSX Handlers
   function onVideoFileDialogButtonClick() {
     inputElement.click();
   }
 
-  // Handlers
   async function onGenerateRoomIdButtonClick() {
-
     // We need to check if user is using Firefox or not since capturing the stream is different.
     const userAgent = navigator.userAgent;
     let localStream = new MediaStream();
@@ -77,7 +97,7 @@ export default function Creator({ setVideoUrl, rtcPeerConnection }) {
 
     // Push all tracks(video and audio) from localStream to our peer connection
     localStream.getTracks().forEach((track) => {
-      rtcPeerConnection.addTrack(track, localStream);
+      pc.addTrack(track, localStream);
     });
 
     // Reference Firestore collections for signaling
@@ -89,13 +109,13 @@ export default function Creator({ setVideoUrl, rtcPeerConnection }) {
     inputIdRef.current.value = callDocument.id;
 
     // Save creator's ICE candidates to the db.
-    rtcPeerConnection.onicecandidate = (event) => {
+    pc.onicecandidate = (event) => {
       event.candidate && offerCandidates.add(event.candidate.toJSON());
     };
 
     // Create the offer
-    const offerDescription = await rtcPeerConnection.createOffer(offerOptions)
-    await rtcPeerConnection.setLocalDescription(offerDescription);
+    const offerDescription = await pc.createOffer(offerOptions)
+    await pc.setLocalDescription(offerDescription);
 
     // Write the offer object to the database
     const offer = {
@@ -109,9 +129,9 @@ export default function Creator({ setVideoUrl, rtcPeerConnection }) {
     callDocument.onSnapshot((snapshot) => {
       const data = snapshot.data();
       // If we don't have description set for the remote stream AND there is an answer waiting for us
-      if (!rtcPeerConnection.currentRemoteDescription && data?.answer) {
+      if (!pc.currentRemoteDescription && data?.answer) {
         const answerDescription = new RTCSessionDescription(data.answer);
-        rtcPeerConnection.setRemoteDescription(answerDescription);
+        pc.setRemoteDescription(answerDescription);
       }
     });
 
@@ -120,14 +140,14 @@ export default function Creator({ setVideoUrl, rtcPeerConnection }) {
       snapshot.docChanges().forEach((change) => {
         if (change.type === "added") {
           const candidate = new RTCIceCandidate(change.doc.data());
-          rtcPeerConnection.addIceCandidate(candidate);
+          pc.addIceCandidate(candidate);
         }
       });
     });
   }
 
   async function onLeaveRoomButtonClick() {
-    rtcPeerConnection.close();
+    pc.close();
     const roomID = inputIdRef.current.value;
     if (roomID) {
       let roomRef = firestoreDb.collection("calls").doc(roomID);
@@ -152,8 +172,10 @@ export default function Creator({ setVideoUrl, rtcPeerConnection }) {
     window.location.reload();
   }
 
-
-
+  function onSendMessageButtonClick() {
+    const message = messageInputRef.current.value;
+    localChannel.send(message);
+  }
 
   // JSX
   return (
@@ -179,6 +201,9 @@ export default function Creator({ setVideoUrl, rtcPeerConnection }) {
         <p>Reset everything:</p>
         <button className="btn-reset-room" onClick={onLeaveRoomButtonClick}>Reset Room</button>
       </div>
+      <input type="text" ref={messageInputRef} />
+      <button className="test-button" onClick={onSendMessageButtonClick} >Send a test message</button>
+
     </div>
   );
 }
