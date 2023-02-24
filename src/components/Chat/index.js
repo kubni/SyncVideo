@@ -3,9 +3,9 @@ import "./chat.css"
 export default function Chat() {
   return (
     <div className="chat">
-      <div className="online-users">
-        <p>Online Users: PLACEHOLDER_COUNT</p>
-        <ul>
+      <div className="online-users-section">
+        <p>Online Users: </p>
+        <ul className="online-users-list">
           <li>User A</li>
           <li>User B</li>
           <li>User C</li>

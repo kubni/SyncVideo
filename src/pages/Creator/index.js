@@ -1,11 +1,17 @@
+// TODO: There are 2 re-renders when we first enter the creator page, even though there are 3
+// state setters, 2 in first useEffect and 1 in the second
+
+
 import "./creator.css"
 import Chat from "../../components/Chat"
 import firestoreDb from "./firebase.js"
 import { useEffect, useRef, useState } from "react"
+import { useLocation } from "react-router-dom"
 
 export default function Creator({ setVideoUrl, pc }) {
 
   // Variables
+  const location = useLocation(); // TODO: State? Inside of useEffect?
   const offerOptions = {
     offerToReceiveAudio: true,
     offerToReceiveVideo: true
@@ -59,7 +65,13 @@ export default function Creator({ setVideoUrl, pc }) {
     function handleLocalChannelStatusChange(event) {
       if (localChannelCopy) {
         const state = localChannelCopy.readyState;
-        state === "open" ? console.log("Local channel is open!") : console.log("Local channel is closed!");
+        if (state === "open") {
+          // This means that the participant connected
+          console.log("Local channel is open!")
+        }
+        else {
+          console.log("Local channel is closed!");
+        }
       }
     }
 
@@ -68,7 +80,7 @@ export default function Creator({ setVideoUrl, pc }) {
     localChannelCopy.onclose = handleLocalChannelStatusChange;
 
     updateLocalChannel(localChannelCopy);
-    // TODO: Cleanup
+    // TODO: Check the cleanup function
     return () => {
       pc.removeEventListener("open", handleLocalChannelStatusChange);
       pc.removeEventListener("close", handleLocalChannelStatusChange);

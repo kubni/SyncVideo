@@ -1,13 +1,21 @@
 .chat {
     display: flex;
-    align-items: center;
-    gap: 1rem;
+    /* align-items: center; */
+    gap: 3rem;
 }
 
-.online-users {
+.online-users-section {
+    border: 1px solid black;
+}
 
+.online-users-list {
+    padding: 0;
+}
+.online-users-list > li {
+ /* TODO: Is this okay, in combination with padding:0 */
+    margin-left: 1rem;
 }
 
 .message-history {
-
+    border: 1px solid black;
 }
