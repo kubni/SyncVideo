@@ -22,8 +22,8 @@ export default function Creator({ setVideoUrl, pc }) {
   const [isActive, setIsActive] = useState(false);
   const [localChannel, updateLocalChannel] = useState(pc.createDataChannel("Local data channel"));
   const [onlineUsersInfo, updateOnlineUsersInfo] = useState({
-    onlineUsers: [],
-    count: 0
+    onlineUsers: [location.state?.hostUsername],
+    count: 1
   });
 
   // UseEffects
@@ -122,8 +122,13 @@ export default function Creator({ setVideoUrl, pc }) {
     // Set the ID
     inputIdRef.current.value = callDocument.id;
     const roomID = inputIdRef.current.value;
+
     // Add the host to the onlineUsers document that is unique to this room
     insertUserIntoDb(location.state?.hostUsername, "host", roomID);
+
+    // Add the host to our onlineUsersInfo state object
+
+
 
     // Save creator's ICE candidates to the db.
     pc.onicecandidate = (event) => {

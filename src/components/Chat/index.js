@@ -17,7 +17,7 @@ export default function Chat({ dataChannel, onlineUsersInfo }) {
   return (
     <div className="chat">
       <div className="online-users-section">
-        <p>{onlineUsersInfo.count} online users: </p>
+        <p>Online users ({onlineUsersInfo.count}): </p>
         <ul className="online-users-list" ref={onlineUsersRef}>
         </ul>
       </div>
