@@ -2,7 +2,7 @@ import "./chat.css"
 
 import { useRef } from "react"
 
-export default function Chat({ dataChannel }) {
+export default function Chat({ dataChannel, onlineUsersInfo }) {
 
   // Refs
   const messageInputRef = useRef(null);
@@ -17,7 +17,7 @@ export default function Chat({ dataChannel }) {
   return (
     <div className="chat">
       <div className="online-users-section">
-        <p>Online Users: </p>
+        <p>{onlineUsersInfo.count} online users: </p>
         <ul className="online-users-list" ref={onlineUsersRef}>
         </ul>
       </div>

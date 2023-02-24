@@ -17,13 +17,14 @@ export default function Creator({ setVideoUrl, pc }) {
     offerToReceiveVideo: true
   };
 
-  let onlineUsers = []; // TODO: State?
-
-
   // States
   const [inputElement, updateInputElement] = useState();
   const [isActive, setIsActive] = useState(false);
   const [localChannel, updateLocalChannel] = useState(pc.createDataChannel("Local data channel"));
+  const [onlineUsersInfo, updateOnlineUsersInfo] = useState({
+    onlineUsers: [],
+    count: 0
+  });
 
   // UseEffects
   useEffect(() => {
@@ -69,16 +70,6 @@ export default function Creator({ setVideoUrl, pc }) {
         if (state === "open") {
           // This means that the participant connected
           console.log("Local channel is open!")
-
-          // Update the onlineUsers
-          /* REVIEW: We could just go through all hosts and participants
-           * and overwrite the whole onlineUsers array, but we can do it
-           * more efficiently by utilizing onSnapshot() and docChanges()
-           * from Firestore API.
-           * The only thing is that that event handler has to be registered
-           * BEFORE the remote peer joins, so doing it here would probably
-           * be too late, and we instead do it in onGenerateRoomIdButtonClick.
-           */
         }
         else {
           console.log("Local channel is closed!");
@@ -172,18 +163,25 @@ export default function Creator({ setVideoUrl, pc }) {
     });
 
 
-    // Listen for changes in participants
+    // Handle new users by listening for changes in participants
     let onlineUsersDoc = firestoreDb.collection("onlineUsers").doc(roomID);
     let participants = onlineUsersDoc.collection("participants");
 
+    let onlineUsersCopy = onlineUsersInfo.onlineUsers;
+    let onlineUserCountCopy = onlineUsersInfo.count;
     participants.onSnapshot((snapshot) => {
       snapshot.docChanges().forEach((change) => {
         if (change.type === "added") {
           // Handle the new participant
           let newParticipant = change.doc.data()
-          console.log("A participant has joined the room!");
-          console.log(newParticipant);
+          console.log(`Participant ${newParticipant.username} has joined the room!`);
+          onlineUsersCopy.push(newParticipant);
+          onlineUserCountCopy++;
         }
+      });
+      updateOnlineUsersInfo({
+        onlineUsers: onlineUsersCopy,
+        count: onlineUserCountCopy,
       });
     });
   }
@@ -268,6 +266,7 @@ export default function Creator({ setVideoUrl, pc }) {
       {/* WIP */}
       <Chat
         dataChannel={localChannel}
+        onlineUsersInfo={onlineUsersInfo}
       />
     </div>
   );
