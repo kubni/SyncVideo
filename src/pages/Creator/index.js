@@ -22,7 +22,12 @@ export default function Creator({ setVideoUrl, pc }) {
   const [isActive, setIsActive] = useState(false);
   const [localChannel, updateLocalChannel] = useState(pc.createDataChannel("Local data channel"));
   const [onlineUsersInfo, updateOnlineUsersInfo] = useState({
-    onlineUsers: [location.state?.hostUsername],
+    onlineUsers: [
+      {
+        username: location.state?.hostUsername,
+        role: "host"
+      }
+    ],
     count: 1
   });
 
@@ -126,10 +131,6 @@ export default function Creator({ setVideoUrl, pc }) {
     // Add the host to the onlineUsers document that is unique to this room
     insertUserIntoDb(location.state?.hostUsername, "host", roomID);
 
-    // Add the host to our onlineUsersInfo state object
-
-
-
     // Save creator's ICE candidates to the db.
     pc.onicecandidate = (event) => {
       event.candidate && offerCandidates.add(event.candidate.toJSON());
@@ -180,6 +181,7 @@ export default function Creator({ setVideoUrl, pc }) {
           // Handle the new participant
           let newParticipant = change.doc.data()
           console.log(`Participant ${newParticipant.username} has joined the room!`);
+          console.log(newParticipant);
           onlineUsersCopy.push(newParticipant);
           onlineUserCountCopy++;
         }
@@ -236,8 +238,6 @@ export default function Creator({ setVideoUrl, pc }) {
         });
       await onlineUsersRef.delete();
     }
-
-
 
     window.location.reload();
   }

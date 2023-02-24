@@ -19,6 +19,10 @@ export default function Chat({ dataChannel, onlineUsersInfo }) {
       <div className="online-users-section">
         <p>Online users ({onlineUsersInfo.count}): </p>
         <ul className="online-users-list" ref={onlineUsersRef}>
+          {onlineUsersInfo.onlineUsers.map((user, i) => {
+            console.log(user);
+            return <li key={i}>{user.username}</li>
+          })}
         </ul>
       </div>
       <div className="chat-main">
