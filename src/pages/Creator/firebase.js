@@ -14,4 +14,32 @@ const firebaseConfig = {
 const firebaseApp = firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-export default db;
+
+async function insertUserIntoDb(username, role, roomID) {
+  // Inserts an user into document that is unique for each room
+  let onlineUsersDocument = db.collection("onlineUsers").doc(roomID);
+  let targetCollection = "";
+
+  role === "host" ? targetCollection = "host" : targetCollection = "participants";
+
+  /* TODO: Maybe a custom ID (possibly username acting as the ID?)
+    Possible problem with that: If 2 users pick the same username, the first one will be overwritten.
+    Possible solution: Check for duplicate names and make the user pick another.*/
+  /* FIXME: Currently, identical usernames are allowed since the actual documents are saved under randomly generated unique ids and there are no additional checks. */
+  onlineUsersDocument.collection(targetCollection).add({
+    username: username,
+    role: role
+  })
+    .then((docRef) => {
+      console.log("Document written with ID: ", docRef.id);
+    })
+    .catch((error) => {
+      console.error("Error adding document: ", error);
+    })
+
+}
+
+export {
+  db,
+  insertUserIntoDb
+}

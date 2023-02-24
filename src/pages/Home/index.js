@@ -9,7 +9,7 @@ export default function Home() {
 
   // States
   const [hostUsername, setHostUsername] = useState("");
-  const [participantUsername, setParticipantUsername] = ("");
+  const [participantUsername, setParticipantUsername] = useState("");
   const [roomID, setRoomID] = useState("");
 
   return (
@@ -39,7 +39,7 @@ export default function Home() {
               onChange={(event) => setRoomID(event.target.value)}
             />
           </div>
-          <Link to="/participant" state={{ roomID: roomID }} className="btn-join-room">Join room</Link>
+          <Link to="/participant" state={{ roomID: roomID, participantUsername: participantUsername }} className="btn-join-room">Join room</Link>
         </div>
       </div>
     </>

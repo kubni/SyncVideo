@@ -4,7 +4,7 @@
 
 import "./creator.css"
 import Chat from "../../components/Chat"
-import firestoreDb from "./firebase.js"
+import { db as firestoreDb, insertUserIntoDb } from "./firebase.js"
 import { useEffect, useRef, useState } from "react"
 import { useLocation } from "react-router-dom"
 
@@ -21,8 +21,6 @@ export default function Creator({ setVideoUrl, pc }) {
   const [inputElement, updateInputElement] = useState();
   const [isActive, setIsActive] = useState(false);
   const [localChannel, updateLocalChannel] = useState(pc.createDataChannel("Local data channel"));
-
-
 
   // UseEffects
   useEffect(() => {
@@ -121,6 +119,9 @@ export default function Creator({ setVideoUrl, pc }) {
     // Set the ID
     inputIdRef.current.value = callDocument.id;
 
+    // Add the host to the onlineUsers document that is unique to this room
+    insertUserIntoDb(location.state?.hostUsername, "host", inputIdRef.current.value);
+
     // Save creator's ICE candidates to the db.
     pc.onicecandidate = (event) => {
       event.candidate && offerCandidates.add(event.candidate.toJSON());
@@ -159,12 +160,14 @@ export default function Creator({ setVideoUrl, pc }) {
     });
   }
 
-  async function onLeaveRoomButtonClick() {
+  async function onResetRoomButtonClick() {
     pc.close();
+
+    // Delete calls collection and its documents
     const roomID = inputIdRef.current.value;
     if (roomID) {
-      let roomRef = firestoreDb.collection("calls").doc(roomID);
-      await roomRef
+      let callRef = firestoreDb.collection("calls").doc(roomID);
+      await callRef
         .collection("answerCandidates")
         .get()
         .then((querySnapshot) => {
@@ -172,7 +175,7 @@ export default function Creator({ setVideoUrl, pc }) {
             doc.ref.delete();
           });
         });
-      await roomRef
+      await callRef
         .collection("offerCandidates")
         .get()
         .then((querySnapshot) => {
@@ -180,8 +183,31 @@ export default function Creator({ setVideoUrl, pc }) {
             doc.ref.delete();
           });
         });
-      await roomRef.delete();
+      await callRef.delete();
+
+      // Delete onlineUsers document related to the current room
+      let onlineUsersRef = firestoreDb.collection("onlineUsers").doc(roomID);
+      await callRef
+        .collection("host")
+        .get()
+        .then((querySnapshot) => {
+          querySnapshot.forEach((doc) => {
+            doc.ref.delete();
+          });
+        });
+      await callRef
+        .collection("participants")
+        .get()
+        .then((querySnapshot) => {
+          querySnapshot.forEach((doc) => {
+            doc.ref.delete();
+          });
+        });
+      await onlineUsersRef.delete();
     }
+
+
+
     window.location.reload();
   }
 
@@ -212,7 +238,7 @@ export default function Creator({ setVideoUrl, pc }) {
       </div>
       <div className="reset-section">
         <p>Reset everything:</p>
-        <button className="btn-reset-room" onClick={onLeaveRoomButtonClick}>Reset Room</button>
+        <button className="btn-reset-room" onClick={onResetRoomButtonClick}>Reset Room</button>
       </div>
       <input type="text" ref={messageInputRef} />
       <button className="test-button" onClick={onSendMessageButtonClick} >Send a test message</button>

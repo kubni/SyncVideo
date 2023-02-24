@@ -1,6 +1,6 @@
 import "./participant.css"
 
-import firestoreDb from "../Creator/firebase.js" // TODO: Move this file elsewhere, outside of Creator page directory
+import { db as firestoreDb, insertUserIntoDb } from "../Creator/firebase.js"
 import { useLocation } from "react-router-dom" // TODO: Read docs
 import { useEffect, useRef, useState } from "react"
 
@@ -107,6 +107,15 @@ export default function Participant({ pc }) {
     }
   }, [pc]); // TODO: We can make a pc copy in order to not have it in dep. array
 
+  useEffect(() => {
+    insertUserIntoDb(location.state?.participantUsername, "participant", location.state?.roomID);
+
+    // TODO: Cleanup
+    return () => {
+
+    }
+  }, [location.state?.participantUsername, location.state?.roomID]);
+
   // Refs
   const localVideoRef = useRef(null);
   const remoteChannelMessageRef = useRef(null);
@@ -118,7 +127,6 @@ export default function Participant({ pc }) {
           Your browser doesn't support HTML5 video.
         </video>
         <p>Notice: By default, the video is muted.</p>
-
         <input type="text" readOnly ref={remoteChannelMessageRef} />
       </div>
     </div>
