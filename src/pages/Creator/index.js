@@ -17,6 +17,9 @@ export default function Creator({ setVideoUrl, pc }) {
     offerToReceiveVideo: true
   };
 
+  let onlineUsers = []; // TODO: State?
+
+
   // States
   const [inputElement, updateInputElement] = useState();
   const [isActive, setIsActive] = useState(false);
@@ -66,6 +69,16 @@ export default function Creator({ setVideoUrl, pc }) {
         if (state === "open") {
           // This means that the participant connected
           console.log("Local channel is open!")
+
+          // Update the onlineUsers
+          /* REVIEW: We could just go through all hosts and participants
+           * and overwrite the whole onlineUsers array, but we can do it
+           * more efficiently by utilizing onSnapshot() and docChanges()
+           * from Firestore API.
+           * The only thing is that that event handler has to be registered
+           * BEFORE the remote peer joins, so doing it here would probably
+           * be too late, and we instead do it in onGenerateRoomIdButtonClick.
+           */
         }
         else {
           console.log("Local channel is closed!");
@@ -91,7 +104,6 @@ export default function Creator({ setVideoUrl, pc }) {
   const localVideoSourceRef = useRef(null);
   const generateRoomIdButtonRef = useRef(null);
   const inputIdRef = useRef(null);
-  const messageInputRef = useRef(null);
 
   // JSX Handlers
   function onVideoFileDialogButtonClick() {
@@ -118,9 +130,9 @@ export default function Creator({ setVideoUrl, pc }) {
 
     // Set the ID
     inputIdRef.current.value = callDocument.id;
-
+    const roomID = inputIdRef.current.value;
     // Add the host to the onlineUsers document that is unique to this room
-    insertUserIntoDb(location.state?.hostUsername, "host", inputIdRef.current.value);
+    insertUserIntoDb(location.state?.hostUsername, "host", roomID);
 
     // Save creator's ICE candidates to the db.
     pc.onicecandidate = (event) => {
@@ -158,6 +170,22 @@ export default function Creator({ setVideoUrl, pc }) {
         }
       });
     });
+
+
+    // Listen for changes in participants
+    let onlineUsersDoc = firestoreDb.collection("onlineUsers").doc(roomID);
+    let participants = onlineUsersDoc.collection("participants");
+
+    participants.onSnapshot((snapshot) => {
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === "added") {
+          // Handle the new participant
+          let newParticipant = change.doc.data()
+          console.log("A participant has joined the room!");
+          console.log(newParticipant);
+        }
+      });
+    });
   }
 
   async function onResetRoomButtonClick() {
@@ -185,7 +213,7 @@ export default function Creator({ setVideoUrl, pc }) {
         });
       await callRef.delete();
 
-      // Delete onlineUsers document related to the current room
+      // FIXME: Delete onlineUsers document related to the current room
       let onlineUsersRef = firestoreDb.collection("onlineUsers").doc(roomID);
       await callRef
         .collection("host")
@@ -211,10 +239,6 @@ export default function Creator({ setVideoUrl, pc }) {
     window.location.reload();
   }
 
-  function onSendMessageButtonClick() {
-    const message = messageInputRef.current.value;
-    localChannel.send(message);
-  }
 
   // JSX
   return (
@@ -240,11 +264,11 @@ export default function Creator({ setVideoUrl, pc }) {
         <p>Reset everything:</p>
         <button className="btn-reset-room" onClick={onResetRoomButtonClick}>Reset Room</button>
       </div>
-      <input type="text" ref={messageInputRef} />
-      <button className="test-button" onClick={onSendMessageButtonClick} >Send a test message</button>
 
       {/* WIP */}
-      <Chat />
+      <Chat
+        dataChannel={localChannel}
+      />
     </div>
   );
 }
