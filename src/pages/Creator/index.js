@@ -9,11 +9,8 @@ import {
   db,
   doc,
   collection,
-  getDoc,
   addDoc,
   setDoc,
-  deleteDoc,
-  getDocs,
   insertUserIntoDb,
   onSnapshot,
 } from "./firebase.js"

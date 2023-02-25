@@ -10,10 +10,7 @@ import {
   collection,
   getDoc,
   addDoc,
-  setDoc,
-  deleteDoc,
   updateDoc,
-  getDocs,
   onSnapshot,
   insertUserIntoDb,
   getHostFromDb
