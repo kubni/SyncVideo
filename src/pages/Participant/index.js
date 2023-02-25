@@ -3,7 +3,19 @@
  * 1) Check for excess rerenders
  */
 import "./participant.css"
-import { db as firestoreDb, insertUserIntoDb, getHostFromDb } from "../Creator/firebase.js"
+import {
+  db,
+  doc,
+  collection,
+  getDoc,
+  addDoc,
+  setDoc,
+  deleteDoc,
+  getDocs,
+  onSnapshot,
+  insertUserIntoDb,
+  getHostFromDb
+} from "../Creator/firebase.js"
 import Chat from "../../components/Chat"
 
 import { useLocation } from "react-router-dom" // TODO: Read docs
@@ -38,7 +50,7 @@ export default function Participant({ pc }) {
       localVideoRef.current.srcObject = localStream;
 
       const roomID = location.state?.roomID;
-      const callDocument = firestoreDb.collection("calls").doc(roomID);
+      const callDocument = db.collection("calls").doc(roomID);
       const answerCandidates = callDocument.collection("answerCandidates");
       const offerCandidates = callDocument.collection("offerCandidates");
 

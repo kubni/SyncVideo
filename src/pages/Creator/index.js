@@ -1,10 +1,23 @@
-// TODO: There are 2 re-renders when we first enter the creator page, even though there are 3
-// state setters, 2 in first useEffect and 1 in the second
-
+/*
+ * TODO:
+ * 1) Disable some buttons after clicking
+ */
 
 import "./creator.css"
 import Chat from "../../components/Chat"
-import { db as firestoreDb, insertUserIntoDb } from "./firebase.js"
+import {
+  db,
+  doc,
+  collection,
+  getDoc,
+  addDoc,
+  setDoc,
+  deleteDoc,
+  getDocs,
+  insertUserIntoDb,
+  onSnapshot,
+} from "./firebase.js"
+
 import { useEffect, useRef, useState } from "react"
 import { useLocation } from "react-router-dom"
 
@@ -120,20 +133,23 @@ export default function Creator({ setVideoUrl, pc }) {
     });
 
     // Reference Firestore collections for signaling
-    let callDocument = firestoreDb.collection("calls").doc();
-    let offerCandidates = callDocument.collection("offerCandidates");
-    let answerCandidates = callDocument.collection("answerCandidates");
+    const callDocumentRef = doc(collection(db, "calls"));
+    const offerCandidates = collection(callDocumentRef, "offerCandidates");
+    const answerCandidates = collection(callDocumentRef, "answerCandidates");
 
     // Set the ID
-    inputIdRef.current.value = callDocument.id;
+    inputIdRef.current.value = callDocumentRef.id;
     const roomID = inputIdRef.current.value;
 
     // Add the host to the onlineUsers document that is unique to this room
-    insertUserIntoDb(location.state?.hostUsername, "host", roomID);
+    await insertUserIntoDb(location.state?.hostUsername, "host", roomID);
 
     // Save creator's ICE candidates to the db.
     pc.onicecandidate = (event) => {
-      event.candidate && offerCandidates.add(event.candidate.toJSON());
+      async function addOfferCandidate(candidate) {
+        await addDoc(offerCandidates, candidate);
+      }
+      event.candidate && addOfferCandidate(event.candidate.toJSON());
     };
 
     // Create the offer
@@ -146,20 +162,21 @@ export default function Creator({ setVideoUrl, pc }) {
       type: offerDescription.type,
     };
 
-    await callDocument.set({ offer });
+    await setDoc(callDocumentRef, { offer });
 
-    // Listen for the changes in call document
-    callDocument.onSnapshot((snapshot) => {
+    // Listen for changes in the call document
+    // TODO: Unsubscribe is used for detaching the listener so we should use it somewhere.
+    const unsubscribeOfferCandidates = onSnapshot(callDocumentRef, (snapshot) => {
       const data = snapshot.data();
-      // If we don't have description set for the remote stream AND there is an answer waiting for us
+      //If we don't have description set for the remote stream AND there is an answer waiting for us
       if (!pc.currentRemoteDescription && data?.answer) {
         const answerDescription = new RTCSessionDescription(data.answer);
         pc.setRemoteDescription(answerDescription);
       }
     });
 
-    // Apart from answer, we need to add ICE candidate to the peer connection
-    answerCandidates.onSnapshot((snapshot) => {
+    // Apart from answer, we need to add ICE candidates to the peer connection.
+    const unsubscribeAnswerCandidates = onSnapshot(answerCandidates, (snapshot) => {
       snapshot.docChanges().forEach((change) => {
         if (change.type === "added") {
           const candidate = new RTCIceCandidate(change.doc.data());
@@ -168,14 +185,14 @@ export default function Creator({ setVideoUrl, pc }) {
       });
     });
 
-
     // Handle new users by listening for changes in participants
-    let onlineUsersDoc = firestoreDb.collection("onlineUsers").doc(roomID);
-    let participants = onlineUsersDoc.collection("participants");
+    const onlineUsersDocRef = doc(db, "onlineUsers", roomID);
+    const participants = collection(onlineUsersDocRef, "participants");
 
     let onlineUsersCopy = onlineUsersInfo.onlineUsers;
     let onlineUserCountCopy = onlineUsersInfo.count;
-    participants.onSnapshot((snapshot) => {
+
+    const unsubscribeParticipants = onSnapshot(participants, (snapshot) => {
       snapshot.docChanges().forEach((change) => {
         if (change.type === "added") {
           // Handle the new participant
@@ -193,55 +210,12 @@ export default function Creator({ setVideoUrl, pc }) {
     });
   }
 
-  async function onResetRoomButtonClick() {
+  function onResetRoomButtonClick() {
     pc.close();
-
-    // Delete calls collection and its documents
-    const roomID = inputIdRef.current.value;
-    if (roomID) {
-      let callRef = firestoreDb.collection("calls").doc(roomID);
-      await callRef
-        .collection("answerCandidates")
-        .get()
-        .then((querySnapshot) => {
-          querySnapshot.forEach((doc) => {
-            doc.ref.delete();
-          });
-        });
-      await callRef
-        .collection("offerCandidates")
-        .get()
-        .then((querySnapshot) => {
-          querySnapshot.forEach((doc) => {
-            doc.ref.delete();
-          });
-        });
-      await callRef.delete();
-
-      // FIXME: Delete onlineUsers document related to the current room
-      let onlineUsersRef = firestoreDb.collection("onlineUsers").doc(roomID);
-      await callRef
-        .collection("host")
-        .get()
-        .then((querySnapshot) => {
-          querySnapshot.forEach((doc) => {
-            doc.ref.delete();
-          });
-        });
-      await callRef
-        .collection("participants")
-        .get()
-        .then((querySnapshot) => {
-          querySnapshot.forEach((doc) => {
-            doc.ref.delete();
-          });
-        });
-      await onlineUsersRef.delete();
-    }
-
     window.location.reload();
-  }
 
+    // We don't delete the actual documents in database because its not recommended for the Web version by Firestore devs.
+  }
 
   // JSX
   return (
@@ -268,7 +242,6 @@ export default function Creator({ setVideoUrl, pc }) {
         <button className="btn-reset-room" onClick={onResetRoomButtonClick}>Reset Room</button>
       </div>
 
-      {/* WIP */}
       <Chat
         dataChannel={localChannel}
         onlineUsersInfo={onlineUsersInfo}

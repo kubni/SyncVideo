@@ -1,7 +1,7 @@
 // TODO: Upgrade to Firestore Web version 9
 
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, doc, getDoc, addDoc, setDoc, deleteDoc, getDocs } from "firebase/firestore"; // TODO: This is from v9, update others too.
+import { getFirestore, collection, doc, getDoc, addDoc, setDoc, deleteDoc, getDocs, onSnapshot } from "firebase/firestore"; // TODO: This is from v9, update others too.
 
 const firebaseConfig = {
   apiKey: `${process.env.REACT_APP_API_KEY}`,
@@ -49,7 +49,7 @@ async function getHostFromDb(roomID) {
   const querySnapshot = await getDocs(hostCollection);
   querySnapshot.forEach((doc) => {
     host.username = doc.data().username;
-  })
+  });
 
   return host;
 }
@@ -58,7 +58,9 @@ async function getHostFromDb(roomID) {
 
 export {
   db,
-  getFirestore,
+  collection,
+  doc,
+  onSnapshot,
   getDoc,
   addDoc,
   setDoc,
