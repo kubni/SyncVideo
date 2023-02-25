@@ -1,6 +1,7 @@
 /*
  * TODO:
  * 1) Check for excess rerenders
+ *
  */
 import "./participant.css"
 import {
@@ -11,6 +12,7 @@ import {
   addDoc,
   setDoc,
   deleteDoc,
+  updateDoc,
   getDocs,
   onSnapshot,
   insertUserIntoDb,
@@ -50,15 +52,25 @@ export default function Participant({ pc }) {
       localVideoRef.current.srcObject = localStream;
 
       const roomID = location.state?.roomID;
-      const callDocument = db.collection("calls").doc(roomID);
-      const answerCandidates = callDocument.collection("answerCandidates");
-      const offerCandidates = callDocument.collection("offerCandidates");
+      const callDocumentRef = doc(db, "calls", roomID);
+      const answerCandidates = collection(callDocumentRef, "answerCandidates");
+      const offerCandidates = collection(callDocumentRef, "offerCandidates");
 
       pc.onicecandidate = (event) => {
-        event.candidate && answerCandidates.add(event.candidate.toJSON());
+        async function addAnswerCandidate(candidate) {
+          await addDoc(answerCandidates, candidate);
+        }
+        event.candidate && addAnswerCandidate(event.candidate.toJSON());
       };
 
-      const callData = (await callDocument.get()).data();
+      let callData = null;
+      const callDocumentSnap = await getDoc(callDocumentRef);
+      if (callDocumentSnap.exists()) {
+        callData = callDocumentSnap.data();
+      }
+      else {
+        console.error("Error: No such callDocument exists!");
+      }
 
       const offerDescription = callData.offer;
       await pc.setRemoteDescription(new RTCSessionDescription(offerDescription));
@@ -71,9 +83,9 @@ export default function Participant({ pc }) {
         sdp: answerDescription.sdp,
       };
 
-      await callDocument.update({ answer });
+      await updateDoc(callDocumentRef, { answer });
 
-      offerCandidates.onSnapshot((snapshot) => {
+      const unsubscribeOfferCandidates = onSnapshot(offerCandidates, (snapshot) => {
         snapshot.docChanges().forEach((change) => {
           console.log(change);
           if (change.type === "added") {

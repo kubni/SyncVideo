@@ -1,7 +1,7 @@
 // TODO: Upgrade to Firestore Web version 9
 
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, doc, getDoc, addDoc, setDoc, deleteDoc, getDocs, onSnapshot } from "firebase/firestore"; // TODO: This is from v9, update others too.
+import { getFirestore, collection, doc, getDoc, addDoc, setDoc, deleteDoc, updateDoc, getDocs, onSnapshot } from "firebase/firestore"; // TODO: This is from v9, update others too.
 
 const firebaseConfig = {
   apiKey: `${process.env.REACT_APP_API_KEY}`,
@@ -65,6 +65,7 @@ export {
   addDoc,
   setDoc,
   deleteDoc,
+  updateDoc,
   getDocs,
   insertUserIntoDb,
   getHostFromDb
