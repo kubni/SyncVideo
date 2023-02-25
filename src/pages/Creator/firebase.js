@@ -1,6 +1,8 @@
+// TODO: Upgrade to Firestore Web version 9
+
 import firebase from "firebase/compat/app";
 import "firebase/compat/firestore";
-
+import { getDocs } from "firebase/firestore"; // TODO: This is from v9, update others too.
 const firebaseConfig = {
   apiKey: `${process.env.REACT_APP_API_KEY}`,
   authDomain: `${process.env.REACT_APP_AUTH_DOMAIN}`,
@@ -36,10 +38,29 @@ async function insertUserIntoDb(username, role, roomID) {
     .catch((error) => {
       console.error("Error adding document: ", error);
     })
-
 }
+
+async function getHostFromDb(roomID) {
+  // We need a wrapper in order to not mess up the order of promises and the standard return
+  const onlineUsersDocument = db.collection("onlineUsers").doc(roomID);
+  const hostCollection = onlineUsersDocument.collection("host");
+
+  let host = {
+    username: "",
+    role: "host"
+  }
+  const querySnapshot = await getDocs(hostCollection);
+  querySnapshot.forEach((doc) => {
+    host.username = doc.data().username;
+  })
+
+  return host;
+}
+
+
 
 export {
   db,
-  insertUserIntoDb
+  insertUserIntoDb,
+  getHostFromDb
 }

@@ -1,6 +1,11 @@
+/*
+ * TODO:
+ * 1) Check for excess rerenders
+ */
 import "./participant.css"
+import { db as firestoreDb, insertUserIntoDb, getHostFromDb } from "../Creator/firebase.js"
+import Chat from "../../components/Chat"
 
-import { db as firestoreDb, insertUserIntoDb } from "../Creator/firebase.js"
 import { useLocation } from "react-router-dom" // TODO: Read docs
 import { useEffect, useRef, useState } from "react"
 
@@ -11,6 +16,10 @@ export default function Participant({ pc }) {
 
   // States
   const [remoteChannel, updateRemoteChannel] = useState(pc.createDataChannel("Remote data channel"));
+  const [onlineUsersInfo, updateOnlineUsersInfo] = useState({
+    onlineUsers: [],
+    count: 0
+  });
 
   // UseEffects
   useEffect(() => {
@@ -37,7 +46,7 @@ export default function Participant({ pc }) {
         event.candidate && answerCandidates.add(event.candidate.toJSON());
       };
 
-      const callData = (await callDocument.get()).data(); // TODO: Undefined on FIrefox
+      const callData = (await callDocument.get()).data();
 
       const offerDescription = callData.offer;
       await pc.setRemoteDescription(new RTCSessionDescription(offerDescription));
@@ -87,7 +96,7 @@ export default function Participant({ pc }) {
 
     // FIXME: We enter here 5 times because of rerenders
     function handleDataChannelEvent(event) {
-      console.log("Data channel received: ", remoteChannelCopy);
+      // console.log("Data channel received: ", remoteChannelCopy);
 
       remoteChannelCopy = event.channel;
       remoteChannelCopy.onmessage = handleReceiveMessage;
@@ -108,7 +117,37 @@ export default function Participant({ pc }) {
   }, [pc]); // TODO: We can make a pc copy in order to not have it in dep. array
 
   useEffect(() => {
-    insertUserIntoDb(location.state?.participantUsername, "participant", location.state?.roomID);
+    async function updateUsers() {
+      const roomID = location.state?.roomID;
+      const currentParticipantUsername = location.state?.participantUsername;
+      let onlineUsersCopy = [];
+      let onlineUsersCountCopy = 0;
+
+      // First we find the host and add it to the onlineUsers
+      const host = await getHostFromDb(roomID);
+      onlineUsersCopy.push(host);
+      onlineUsersCountCopy++;
+
+      // /* TODO: When 1-to-N is supported in the future,
+      //  *       we would have to call getOtherParticipantsFromDb here.
+      //  *       and push them into onlineUsers array.*/
+
+      // Now we just add ourselves to the onlineUsers array and to the database.
+      const currentParticipant = {
+        username: currentParticipantUsername,
+        role: "participant"
+      }
+      onlineUsersCopy.push(currentParticipant);
+      onlineUsersCountCopy++;
+
+      await insertUserIntoDb(location.state?.participantUsername, "participant", roomID);
+
+      updateOnlineUsersInfo({
+        onlineUsers: onlineUsersCopy,
+        count: onlineUsersCountCopy
+      });
+    }
+    updateUsers();
 
     // TODO: Cleanup
     return () => {
@@ -127,8 +166,11 @@ export default function Participant({ pc }) {
           Your browser doesn't support HTML5 video.
         </video>
         <p>Notice: By default, the video is muted.</p>
-        <input type="text" readOnly ref={remoteChannelMessageRef} />
       </div>
+      <Chat
+        dataChannel={remoteChannel}
+        onlineUsersInfo={onlineUsersInfo}
+      />
     </div>
   )
 }
