@@ -1,8 +1,8 @@
 // TODO: Upgrade to Firestore Web version 9
 
-import firebase from "firebase/compat/app";
-import "firebase/compat/firestore";
-import { getDocs } from "firebase/firestore"; // TODO: This is from v9, update others too.
+import { initializeApp } from "firebase/app";
+import { getFirestore, collection, doc, getDoc, addDoc, setDoc, deleteDoc, getDocs } from "firebase/firestore"; // TODO: This is from v9, update others too.
+
 const firebaseConfig = {
   apiKey: `${process.env.REACT_APP_API_KEY}`,
   authDomain: `${process.env.REACT_APP_AUTH_DOMAIN}`,
@@ -13,13 +13,14 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const firebaseApp = firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+const firebaseApp = initializeApp(firebaseConfig);
+const db = getFirestore(firebaseApp);
 
 
 async function insertUserIntoDb(username, role, roomID) {
   // Inserts an user into document that is unique for each room
-  let onlineUsersDocument = db.collection("onlineUsers").doc(roomID);
+
+  let onlineUsersDocument = doc(db, "onlineUsers", roomID);
   let targetCollection = "";
 
   role === "host" ? targetCollection = "host" : targetCollection = "participants";
@@ -28,22 +29,18 @@ async function insertUserIntoDb(username, role, roomID) {
     Possible problem with that: If 2 users pick the same username, the first one will be overwritten.
     Possible solution: Check for duplicate names and make the user pick another.*/
   /* FIXME: Currently, identical usernames are allowed since the actual documents are saved under randomly generated unique ids and there are no additional checks. */
-  onlineUsersDocument.collection(targetCollection).add({
+
+  const docRef = await addDoc(collection(onlineUsersDocument, targetCollection), {
     username: username,
     role: role
-  })
-    .then((docRef) => {
-      console.log("Document written with ID: ", docRef.id);
-    })
-    .catch((error) => {
-      console.error("Error adding document: ", error);
-    })
+  });
+  console.log("Document written with ID: ", docRef.id);
 }
 
 async function getHostFromDb(roomID) {
   // We need a wrapper in order to not mess up the order of promises and the standard return
-  const onlineUsersDocument = db.collection("onlineUsers").doc(roomID);
-  const hostCollection = onlineUsersDocument.collection("host");
+  let onlineUsersDocument = doc(db, "onlineUsers", roomID);
+  let hostCollection = collection(onlineUsersDocument, "host");
 
   let host = {
     username: "",
@@ -61,6 +58,12 @@ async function getHostFromDb(roomID) {
 
 export {
   db,
+  getFirestore,
+  getDoc,
+  addDoc,
+  setDoc,
+  deleteDoc,
+  getDocs,
   insertUserIntoDb,
   getHostFromDb
 }
