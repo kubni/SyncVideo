@@ -21,7 +21,7 @@ import { useLocation } from "react-router-dom"
 export default function Creator({ setVideoUrl, pc }) {
 
   // Variables
-  const location = useLocation(); // TODO: State? Inside of useEffect?
+  const location = useLocation();
   const offerOptions = {
     offerToReceiveAudio: true,
     offerToReceiveVideo: true
@@ -79,9 +79,10 @@ export default function Creator({ setVideoUrl, pc }) {
   }, [setVideoUrl]);
 
   useEffect(() => {
+
     function handleLocalChannelStatusChange(event) {
-      if (localChannelCopy) {
-        const state = localChannelCopy.readyState;
+      if (localChannel) {
+        const state = localChannel.readyState;
         if (state === "open") {
           // This means that the participant connected
           console.log("Local channel is open!")
@@ -92,17 +93,14 @@ export default function Creator({ setVideoUrl, pc }) {
       }
     }
 
-    let localChannelCopy = pc.createDataChannel("Copy of local data channel");
-    localChannelCopy.onopen = handleLocalChannelStatusChange;
-    localChannelCopy.onclose = handleLocalChannelStatusChange;
+    localChannel.onopen = handleLocalChannelStatusChange;
+    localChannel.onclose = handleLocalChannelStatusChange;
 
-    updateLocalChannel(localChannelCopy);
-    // TODO: Check the cleanup function
     return () => {
-      pc.removeEventListener("open", handleLocalChannelStatusChange);
-      pc.removeEventListener("close", handleLocalChannelStatusChange);
+      localChannel.removeEventListener("open", handleLocalChannelStatusChange);
+      localChannel.removeEventListener("close", handleLocalChannelStatusChange);
     }
-  }, [pc]);
+  }, [pc, localChannel]);
 
   // Refs
   const videoFileDialogButtonRef = useRef(null);

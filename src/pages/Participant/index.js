@@ -1,6 +1,7 @@
 /*
  * TODO:
  * 1) Check for excess rerenders
+ * 2) Eliminate copies when updating state
  *
  */
 import "./participant.css"
@@ -102,40 +103,31 @@ export default function Participant({ pc }) {
   }, [location.state?.roomID, pc]);
 
   useEffect(() => {
-    let remoteChannelCopy = pc.createDataChannel("Copy of remote data channel");
-
     function handleRemoteChannelStatusChange(event) {
-      if (remoteChannelCopy) {
-        console.log(`Receive channel's status has changed to ${remoteChannelCopy.readyState}`);
+      if (remoteChannel) {
+        console.log(`Receive channel's status has changed to ${remoteChannel.readyState}`);
       }
-    }
-
-    function handleReceiveMessage(event) {
-      console.log("Incoming data: ", event.data);
-      remoteChannelMessageRef.current.value = event.data;
     }
 
     // FIXME: We enter here 5 times because of rerenders
     function handleDataChannelEvent(event) {
-      // console.log("Data channel received: ", remoteChannelCopy);
+      event.channel.onopen = handleRemoteChannelStatusChange;
+      event.channel.onclose = handleRemoteChannelStatusChange;
 
-      remoteChannelCopy = event.channel;
-      remoteChannelCopy.onmessage = handleReceiveMessage;
-      remoteChannelCopy.onopen = handleRemoteChannelStatusChange;
-      remoteChannelCopy.onclose = handleRemoteChannelStatusChange;
+      console.log("Event.channel: ", event.channel);
 
-      updateRemoteChannel(remoteChannelCopy);
+
+      // TODO: Remote actually gets set to the one that arrives with datachanel event, which is in fact the LOCAL CHANNEL. Does this prevent the remote from sending messages to the local?
+      updateRemoteChannel(event.channel);
     }
-
     pc.addEventListener("datachannel", handleDataChannelEvent);
 
     return () => {
-      pc.removeEventListener("message", handleReceiveMessage); // TODO: handleReceiveMessage or remoteChannel.onmessage as 2nd argument
-      pc.removeEventListener("open", handleRemoteChannelStatusChange);
-      pc.removeEventListener("close", handleRemoteChannelStatusChange);
+      remoteChannel.removeEventListener("open", handleRemoteChannelStatusChange);
+      remoteChannel.removeEventListener("close", handleRemoteChannelStatusChange);
       pc.removeEventListener("datachannel", handleDataChannelEvent);
     }
-  }, [pc]); // TODO: We can make a pc copy in order to not have it in dep. array
+  }, [pc, remoteChannel]);
 
   useEffect(() => {
     async function updateUsers() {
@@ -178,7 +170,6 @@ export default function Participant({ pc }) {
 
   // Refs
   const localVideoRef = useRef(null);
-  const remoteChannelMessageRef = useRef(null);
 
   return (
     <div className="participant-page">
