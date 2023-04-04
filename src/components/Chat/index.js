@@ -20,19 +20,18 @@ export default function Chat({ dataChannel, onlineUsersInfo }) {
     }
     dataChannel.onmessage = handleReceiveMessage;
 
-    // FIXME: When remote sends a message, somehow dataChannel is still Local Channel
-    // so the creator doesn't get the message then
     console.log(dataChannel.onmessage);
 
-    // return () => {
-    //   dataChannel.removeEventListener("message", handleReceiveMessage);
-    // }
+    return () => {
+      dataChannel.removeEventListener("message", handleReceiveMessage);
+    }
   }, [dataChannel, messageHistory]);
 
 
   // Refs
   const messageInputRef = useRef(null);
   const onlineUsersRef = useRef(null);
+
 
   // JSX Handlers
   function onSendMessageButtonClick() {
@@ -66,7 +65,8 @@ export default function Chat({ dataChannel, onlineUsersInfo }) {
           }
         </div>
         <input type="text" ref={messageInputRef} />
-        <button className="test-button" onClick={onSendMessageButtonClick} >Send a test message</button>
+        <button onClick={onSendMessageButtonClick} >Send a test message</button>
+
       </div>
     </div>
   )

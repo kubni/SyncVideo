@@ -27,6 +27,7 @@ export default function Participant({ pc }) {
   const location = useLocation();
 
   // States
+  // // TODO: Check if there is a problem in reating a data channel directly on the state object without its setter
   const [remoteChannel, updateRemoteChannel] = useState(pc.createDataChannel("Remote data channel"));
   const [onlineUsersInfo, updateOnlineUsersInfo] = useState({
     onlineUsers: [],
@@ -171,6 +172,21 @@ export default function Participant({ pc }) {
   // Refs
   const localVideoRef = useRef(null);
 
+
+
+
+  // WIP
+  const testInputRef = useRef(null);
+
+  function onTestButtonClick() {
+    console.log("Test button clicked");
+    remoteChannel.send("HELLO FROM THE REMOTE END"); // FIXME: This is here only for test purposes, and it doesn't work (the creator doesn't see messages sent from this end)
+  }
+
+
+
+
+
   return (
     <div className="participant-page">
       <div className="remote-video">
@@ -183,6 +199,9 @@ export default function Participant({ pc }) {
         dataChannel={remoteChannel}
         onlineUsersInfo={onlineUsersInfo}
       />
+      {/* WIP */}
+      <input type="text" ref={testInputRef} />
+      <button onClick={onTestButtonClick} >WIP TEST</button>
     </div>
   )
 }
